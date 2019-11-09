@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "801694153838",
+    "firebase_url": "https://pictree-29737.firebaseio.com",
+    "project_id": "pictree-29737",
+    "storage_bucket": "pictree-29737.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:801694153838:android:626b4a83459176191cba7f",
+        "android_client_info": {
+          "package_name": "com.bretthirschberger.pictree"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "801694153838-c73ffm6qh2u9uffj986uemjijh0r4brt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bretthirschberger.pictree",
+            "certificate_hash": "6340acb29c0e87f300a0dd63b4b4ac6147ec3ee6"
+          }
+        },
+        {
+          "client_id": "801694153838-um0jhs46bo2t1b0f0lqpadulushp7rpk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdClBLB29C5ao7tfJZuVe_6rx29Hm0Pfg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "801694153838-um0jhs46bo2t1b0f0lqpadulushp7rpk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
