@@ -3,6 +3,7 @@ package com.bretthirschberger.pictree;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +20,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.ListResourceBundle;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -71,10 +73,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+//        new Thread().j
     }
 
     private void onSignedInInitialize(String username) {
         mUsername = username;
+        startActivity(new Intent(getApplicationContext(),MainFeedActivity.class));
 //        attachDatabaseReadListener();
     }
 
