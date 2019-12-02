@@ -1,33 +1,75 @@
 package com.bretthirschberger.pictree;
 
-import android.graphics.drawable.Drawable;
+import android.net.Uri;
 
-final public class Post {
-    private Drawable mImage;
-    private Drawable mProfilePicture;
-    private String mUsername;
-    private String[] mComments;
+import androidx.annotation.NonNull;
 
-    public Post(Drawable profilePicture, Drawable image, String username, String[] comments) {
-        mImage = image;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+
+public class Post {
+    private String mImageUri;
+    private User mUser;
+    private String mPostTime;
+    private ArrayList<Comment> mComments;
+    private int mNodePlace;
+
+    public Post(){
+        //Required empty constructor
+    }
+
+    public Post(int nodePlace, String imageUri, User user) {
+        mNodePlace = nodePlace;
+        mImageUri = imageUri;
+        mUser = user;
+        mPostTime = LocalDateTime.now().toString();
+    }
+
+    public Post(int nodePlace, String imageUri, User user, ArrayList<Comment> comments) {
+        mNodePlace = nodePlace;
+        mImageUri = imageUri;
         mComments = comments;
-        mUsername = username;
-        mProfilePicture = profilePicture;
+        mUser = user;
+        mPostTime = LocalDateTime.now().toString();
     }
 
-    public Drawable getProfilePicture() {
-        return mProfilePicture;
+    public User getUser() {
+        return mUser;
     }
 
-    public String getUsername() {
-        return mUsername;
+    public String getImage() {
+        return mImageUri;
     }
 
-    public Drawable getImage() {
-        return mImage;
+    public void addComment(Comment comment) {
+        mComments.add(comment);
     }
 
-    public String[] getComments() {
+    public String getPostTime() {
+        return mPostTime;
+    }
+
+    public int getNodePlace() {
+        return mNodePlace;
+    }
+
+    public ArrayList<Comment> getComments() {
         return mComments;
+    }
+
+    public void setImage(String imageUri) {
+        mImageUri = imageUri;
+    }
+
+    public void setNodePlace(int nodePlace) {
+        mNodePlace = nodePlace;
+    }
+
+    public void setPostTime(String postTime) {
+        mPostTime = postTime;
+    }
+
+    public void setUser(User user) {
+        mUser = user;
     }
 }

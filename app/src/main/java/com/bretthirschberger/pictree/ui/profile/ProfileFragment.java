@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.TabHost;
 
 import androidx.annotation.Nullable;
@@ -17,9 +19,8 @@ import com.bretthirschberger.pictree.R;
 public class ProfileFragment extends Fragment {
 
     private ProfileViewModel mProfileViewModel;
-//    private TabLayout mTabLayout;
-//    private TabItem mRootTab;
-//    private TabItem mBranchTab;
+    private GridLayout mBranchLayout;
+    private GridLayout mRootLayout;
     private TabHost mTabHost;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -27,7 +28,9 @@ public class ProfileFragment extends Fragment {
         mProfileViewModel =
                 ViewModelProviders.of(this).get(ProfileViewModel.class);
         View root = inflater.inflate(R.layout.fragment_profile, container, false);
-        mTabHost =root.findViewById(R.id.profile_tabs);
+        mBranchLayout = root.findViewById(R.id.profile_branches_tab);
+        mRootLayout = root.findViewById(R.id.profile_roots_tab);
+        mTabHost = root.findViewById(R.id.profile_tabs);
         mTabHost.setup();
 
         TabHost.TabSpec spec = mTabHost.newTabSpec("Branches");
@@ -46,15 +49,26 @@ public class ProfileFragment extends Fragment {
 //                textView.setText(s);
             }
         });
-
+        populateBranches();
+        populateRoots();
         return root;
     }
 
-    public void populateBranches(View view) {
-
+    private void populateBranches() {
+        ImageView imageView = new ImageView(getContext());
+        imageView.setImageDrawable(getResources().getDrawable(R.drawable.common_google_signin_btn_icon_dark));
+        mBranchLayout.addView(imageView);
+//        mBranchLayout.addView(imageView);
+//        mBranchLayout.addView(imageView);
+//        mBranchLayout.addView(imageView);
     }
 
-    public void populateRoots(View view) {
-
+    private void populateRoots() {
+        ImageView imageView = new ImageView(getContext());
+        imageView.setImageDrawable(getResources().getDrawable(R.drawable.common_google_signin_btn_icon_disabled));
+        mRootLayout.addView(imageView);
+//        mRootLayout.addView(imageView);
+//        mRootLayout.addView(imageView);
+//        mRootLayout.addView(imageView);
     }
 }
