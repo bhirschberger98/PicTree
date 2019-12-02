@@ -18,7 +18,6 @@ import com.bretthirschberger.pictree.Post;
 import com.bretthirschberger.pictree.PostListAdapter;
 import com.bretthirschberger.pictree.R;
 import com.bretthirschberger.pictree.User;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -58,23 +57,20 @@ public class HomeFragment extends Fragment {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
+                posts.clear();
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    Post post= new Post();
-                    User user= new User();
-                    Log.i("snapshot",snapshot.toString());
+                    Post post = new Post();
+                    User user = new User();
+                    Log.i("snapshot", snapshot.toString());
                     user.setEmail(snapshot.child("user").getValue(User.class).getEmail());
                     user.setProfilePicture(snapshot.child("user").getValue(User.class).getProfilePicture());
                     user.setEmail(snapshot.child("user").getValue(User.class).getEmail());
                     post.setUser(user);
                     post.setImage(snapshot.getValue(Post.class).getImage());
                     post.setPostTime(snapshot.getValue(Post.class).getPostTime());
-                    Log.i("Image URI",post.getImage());
-                    Log.i("Time",post.getPostTime());
-                    posts.add(post);
-//                post.getImage().trim();
-//                post.getNodePlace();
-//                post.getPostTime().toLocalDate();
-//                post.getUser().getProfilePicture();
+                    Log.i("Image URI", post.getImage());
+                    Log.i("Time", post.getPostTime());
+                    posts.add(0, post);
                 }
                 mAdapter.notifyDataSetChanged();
             }

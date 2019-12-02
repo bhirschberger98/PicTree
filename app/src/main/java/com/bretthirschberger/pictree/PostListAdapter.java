@@ -1,6 +1,8 @@
 package com.bretthirschberger.pictree;
 
-import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,7 +12,11 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 public class PostListAdapter extends RecyclerView.Adapter<PostListAdapter.ExamplePost> {
     private ArrayList<Post> mPosts;
@@ -45,11 +51,15 @@ public class PostListAdapter extends RecyclerView.Adapter<PostListAdapter.Exampl
 
     @Override
     public void onBindViewHolder(@NonNull ExamplePost holder, int position) {
-        Post currentItem =mPosts.get(position);
-        holder.mPostPicture.setImageURI(Uri.parse(currentItem.getImage()));
-        holder.mProfilePicture.setImageURI(Uri.parse(currentItem.getUser().getProfilePicture()));
+        Post currentItem = mPosts.get(position);
+        try {
+            holder.mPostPicture.setImageBitmap(new ImageDownloader().execute(new URL(currentItem.getImage())).get());
+            holder.mProfilePicture.setImageBitmap(new ImageDownloader().execute(new URL(currentItem.getUser().getProfilePicture())).get());
+        } catch (InterruptedException | ExecutionException | MalformedURLException e) {
+            e.printStackTrace();
+        }
         holder.mUsername.setText(currentItem.getUser().getUsername());
-        holder.mNodePlace.setText(currentItem.getNodePlace()+"th node");
+        holder.mNodePlace.setText(currentItem.getNodePlace() + "th node");
         holder.mTime.setText(currentItem.getPostTime());
     }
 
@@ -58,4 +68,18 @@ public class PostListAdapter extends RecyclerView.Adapter<PostListAdapter.Exampl
         return mPosts.size();
     }
 
+
+    private class ImageDownloader extends AsyncTask<URL, Integer, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(URL... urls) {
+
+            try {
+                return BitmapFactory.decodeStream(urls[0].openConnection().getInputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
 }

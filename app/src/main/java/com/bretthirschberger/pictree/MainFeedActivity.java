@@ -2,20 +2,17 @@ package com.bretthirschberger.pictree;
 
 import android.content.ContentResolver;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import android.os.Environment;
-import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
@@ -25,11 +22,10 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
@@ -89,9 +85,7 @@ public class MainFeedActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-//            Bundle extras = data.getExtras();
-//            Bitmap imagePost = (Bitmap) extras.get("data");
-            uploadPost(mPhotoUri);
+            uploadPostToStorage(mPhotoUri);
         }
     }
 
@@ -147,22 +141,33 @@ public class MainFeedActivity extends AppCompatActivity {
 
     private void uploadPost(Uri imageUri) {
         if (imageUri != null) {
-            StorageReference fileReference = mStorageRef.child(System.currentTimeMillis()
-                    + "." + getFileExtension(imageUri));
-
-            mUploadTask = fileReference.putFile(imageUri)
-                    .addOnSuccessListener(taskSnapshot -> {
-                        Toast.makeText(getApplicationContext(), "Upload successful", Toast.LENGTH_LONG).show();
-                        String uploadId = mPostsReference.push().getKey();
-                        mPostsReference.child(POSTS_REFERENCE).setValue(new Root(imageUri.toString(), User.getCurrentUser()));
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                        e.printStackTrace();
-                    });
+            String uploadId = mPostsReference.push().getKey();
+            mPostsReference.child(uploadId).setValue(new Root(imageUri.toString(), User.getCurrentUser()));
         } else {
             Toast.makeText(this, "No file selected", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void uploadPostToStorage(Uri photoUri) {
+
+        String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        mStorageRef.child("posts/" + userID + "/" + System.currentTimeMillis() + ".jpg").putFile(photoUri)
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        // Get a URL to the uploaded content
+                        Task<Uri> downloadUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl();
+                        downloadUrl.addOnSuccessListener(uri -> uploadPost(downloadUrl.getResult()));
+
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception exception) {
+                        // Handle unsuccessful uploads
+                        // ...
+                    }
+                });
     }
 
     @Override
