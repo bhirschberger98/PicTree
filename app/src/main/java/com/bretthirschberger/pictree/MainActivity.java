@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,8 +19,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserInfo;
 import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +32,7 @@ import java.util.ListResourceBundle;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private static final String USER_REFERENCE = "user";
     public static final String ANONYMOUS = "anonymous";
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
     public static final int RC_SIGN_IN = 1;
@@ -38,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private Button mSendButton;
     private String mUsername;
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mMessagesDatabaseReference;
+    private DatabaseReference mUserReference;
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
@@ -50,30 +55,28 @@ public class MainActivity extends AppCompatActivity {
         mUsername = ANONYMOUS;
         // Initialize Firebase components
         mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mUserReference = mFirebaseDatabase.getReference().child(USER_REFERENCE);
         mFirebaseAuth = FirebaseAuth.getInstance();
-        mAuthStateListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    // User is signed in
-                    onSignedInInitialize(user.getDisplayName());
-                } else {
-                    // User is signed out
-                    onSignedOutCleanup();
-                    List<AuthUI.IdpConfig> providers = Arrays.asList(
-                            new AuthUI.IdpConfig.EmailBuilder().build(),
-                            new AuthUI.IdpConfig.GoogleBuilder().build());
+        mAuthStateListener = firebaseAuth -> {
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null) {
+                // User is signed in
+                onSignedInInitialize(user.getDisplayName());
+            } else {
+                // User is signed out
+                onSignedOutCleanup();
+                List<AuthUI.IdpConfig> providers = Arrays.asList(
+                        new AuthUI.IdpConfig.EmailBuilder().build(),
+                        new AuthUI.IdpConfig.GoogleBuilder().build());
 
-                    // Create and launch sign-in intent
-                    startActivityForResult(
-                            AuthUI.getInstance()
-                                    .createSignInIntentBuilder()
-                                    .setIsSmartLockEnabled(false)
-                                    .setAvailableProviders(providers)
-                                    .build(),
-                            RC_SIGN_IN);
-                }
+                // Create and launch sign-in intent
+                startActivityForResult(
+                        AuthUI.getInstance()
+                                .createSignInIntentBuilder()
+                                .setIsSmartLockEnabled(false)
+                                .setAvailableProviders(providers)
+                                .build(),
+                        RC_SIGN_IN);
             }
         };
     }
@@ -86,8 +89,32 @@ public class MainActivity extends AppCompatActivity {
             String name = user.getDisplayName();
             String email = user.getEmail();
             Uri photoUrl = user.getPhotoUrl();
+            User testUser = new User(name, email, photoUrl);
 
-            User.setCurrentUser(new User(name,email,photoUrl));
+            mUserReference.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        if (testUser.equals(snapshot.getValue(User.class))) {
+                            User.setCurrentUser(snapshot.getValue(User.class));
+                            Log.i("User", User.getCurrentUser().toString());
+                            break;
+                        }
+                    }
+                    if (User.getCurrentUser() == null) {
+                        String uploadId = mUserReference.push().getKey();
+                        User.setCurrentUser(new User(name, email, uploadId, photoUrl));
+                        mUserReference.child(uploadId).setValue(User.getCurrentUser());
+                    }
+                    startActivity(new Intent(getApplicationContext(), MainFeedActivity.class));
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    // Failed to read value
+                    Log.w(TAG, "Failed to read value.", error.toException());
+                }
+            });
 
             // Check if user's email is verified
             boolean emailVerified = user.isEmailVerified();
@@ -96,12 +123,12 @@ public class MainActivity extends AppCompatActivity {
             // authenticate with your backend server, if you have one. Use
             // FirebaseUser.getIdToken() instead.
             String uid = user.getUid();
-        Log.i("USER display name",name);
-        Log.i("USER email",email);
+
+            Log.i("USER display name", name);
+            Log.i("USER email", email);
         }
 
 
-        startActivity(new Intent(getApplicationContext(),MainFeedActivity.class));
 //        attachDatabaseReadListener();
     }
 

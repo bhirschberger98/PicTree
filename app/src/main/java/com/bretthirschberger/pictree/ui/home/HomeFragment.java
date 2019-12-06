@@ -2,9 +2,12 @@ package com.bretthirschberger.pictree.ui.home;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
@@ -17,7 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bretthirschberger.pictree.Post;
 import com.bretthirschberger.pictree.PostListAdapter;
 import com.bretthirschberger.pictree.R;
-import com.bretthirschberger.pictree.User;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -33,6 +36,8 @@ public class HomeFragment extends Fragment {
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     private static String POSTS_REFERENCE = "posts";
+    private EditText mSearchField;
+
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -40,9 +45,11 @@ public class HomeFragment extends Fragment {
                 ViewModelProviders.of(this).get(HomeViewModel.class);
         View root = inflater.inflate(R.layout.fragment_home, container, false);
 
+        mSearchField = root.findViewById(R.id.toolbar_search);
+
         // Write a message to the database
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference postsReference = database.getReference();
+        DatabaseReference postsReference = database.getReference(POSTS_REFERENCE);
 
         homeViewModel.getText().observe(this, new Observer<String>() {
             @Override
@@ -59,17 +66,7 @@ public class HomeFragment extends Fragment {
                 // whenever data at this location is updated.
                 posts.clear();
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    Post post = new Post();
-                    User user = new User();
-                    Log.i("snapshot", snapshot.toString());
-                    user.setEmail(snapshot.child("user").getValue(User.class).getEmail());
-                    user.setProfilePicture(snapshot.child("user").getValue(User.class).getProfilePicture());
-                    user.setEmail(snapshot.child("user").getValue(User.class).getEmail());
-                    post.setUser(user);
-                    post.setImage(snapshot.getValue(Post.class).getImage());
-                    post.setPostTime(snapshot.getValue(Post.class).getPostTime());
-                    Log.i("Image URI", post.getImage());
-                    Log.i("Time", post.getPostTime());
+                    Post post = snapshot.getValue(Post.class);
                     posts.add(0, post);
                 }
                 mAdapter.notifyDataSetChanged();
@@ -81,6 +78,35 @@ public class HomeFragment extends Fragment {
                 Log.w("Database Error", "Failed to read value.", error.toException());
             }
         });
+
+        mSearchField.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                postsReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        posts.clear();
+//                        if (mSearchField.getText().toString().equals(""))
+//                            return;
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            if (snapshot.getValue(Post.class).getDescription().toUpperCase().contains(mSearchField.getText().toString().toUpperCase())) {
+                                Post post = snapshot.getValue(Post.class);
+                                posts.add(0, post);
+                                mAdapter.notifyDataSetChanged();
+                            }
+                        }
+                        if (posts.size() == 0)
+                            Toast.makeText(getContext(), getResources().getText(R.string.not_found_label), Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+                return true;
+            }
+            return false;
+        });
         mAdapter = new PostListAdapter(posts);
         mLayoutManager = new LinearLayoutManager(getContext());
         mPostsList = root.findViewById(R.id.post_list);
@@ -89,6 +115,5 @@ public class HomeFragment extends Fragment {
         mPostsList.setLayoutManager(mLayoutManager);
         mPostsList.setAdapter(mAdapter);
         return root;
-
     }
 }

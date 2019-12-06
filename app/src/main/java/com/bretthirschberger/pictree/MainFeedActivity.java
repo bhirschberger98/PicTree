@@ -1,10 +1,19 @@
 package com.bretthirschberger.pictree;
 
-import android.content.ContentResolver;
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.media.Image;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
+import com.bretthirschberger.pictree.ui.home.HomeFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -15,6 +24,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.content.FileProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -23,8 +33,19 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
+import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
+import com.google.firebase.ml.vision.objects.FirebaseVisionObject;
+import com.google.firebase.ml.vision.objects.FirebaseVisionObjectDetector;
+import com.google.firebase.ml.vision.objects.FirebaseVisionObjectDetectorOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
@@ -35,26 +56,42 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.SparseIntArray;
+import android.view.KeyEvent;
 import android.view.Menu;
-import android.webkit.MimeTypeMap;
+import android.view.Surface;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class MainFeedActivity extends AppCompatActivity {
+
+    private HomeFragment mHomeFragment;
 
     private AppBarConfiguration mAppBarConfiguration;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static String POSTS_REFERENCE = "posts";
+    private static final String USER_REFERENCE = "user";
     private String mCurrentPhotoPath;
     private StorageReference mStorageRef;
     private FirebaseDatabase mDatabase;
     private DatabaseReference mPostsReference;
-    private StorageTask mUploadTask;
+    private DatabaseReference mUserReference;
+    private EditText mSearchField;
     private Uri mPhotoUri;
+    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
+
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,30 +99,33 @@ public class MainFeedActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main_feed);
         Toolbar toolbar = findViewById(R.id.toolbar);
         mDatabase = FirebaseDatabase.getInstance();
-        mPostsReference = mDatabase.getReference();
+        mPostsReference = mDatabase.getReference(POSTS_REFERENCE);
+        mUserReference = mDatabase.getReference(USER_REFERENCE);
         setSupportActionBar(toolbar);
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> dispatchTakePictureIntent());
         mStorageRef = FirebaseStorage.getInstance().getReference();
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
+        mSearchField = findViewById(R.id.toolbar_search);
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow,
-                R.id.nav_tools, R.id.nav_share, R.id.nav_send)
+                R.id.nav_home, R.id.nav_gallery)
                 .setDrawerLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            uploadPostToStorage(mPhotoUri);
+//            uploadPostToStorage(mPhotoUri);
+            runObjectRecognition(mPhotoUri);
         }
     }
 
@@ -133,33 +173,35 @@ public class MainFeedActivity extends AppCompatActivity {
         return image;
     }
 
-    private String getFileExtension(Uri uri) {
-        ContentResolver cR = getContentResolver();
-        MimeTypeMap mime = MimeTypeMap.getSingleton();
-        return mime.getExtensionFromMimeType(cR.getType(uri));
-    }
-
-    private void uploadPost(Uri imageUri) {
+    private void uploadPost(Uri imageUri, String description) {
         if (imageUri != null) {
             String uploadId = mPostsReference.push().getKey();
-            mPostsReference.child(uploadId).setValue(new Root(imageUri.toString(), User.getCurrentUser()));
+            mPostsReference.child(uploadId).setValue(new Post(1, imageUri.toString(), description, User.getCurrentUser(), uploadId));
+            mUserReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    mUserReference.child(User.getCurrentUser().getUserId()).child("rootAmt").setValue(dataSnapshot.child(User.getCurrentUser().getUserId()).getValue(User.class).getRootAmt() + 1);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
         } else {
             Toast.makeText(this, "No file selected", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void uploadPostToStorage(Uri photoUri) {
+    private void uploadPostToStorage(Uri photoUri, String description) {
 
         String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
         mStorageRef.child("posts/" + userID + "/" + System.currentTimeMillis() + ".jpg").putFile(photoUri)
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        // Get a URL to the uploaded content
-                        Task<Uri> downloadUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl();
-                        downloadUrl.addOnSuccessListener(uri -> uploadPost(downloadUrl.getResult()));
+                .addOnSuccessListener(taskSnapshot -> {
+                    // Get a URL to the uploaded content
+                    Task<Uri> downloadUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl();
+                    downloadUrl.addOnSuccessListener(uri -> uploadPost(downloadUrl.getResult(), description));
 
-                    }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
@@ -182,5 +224,53 @@ public class MainFeedActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
                 || super.onSupportNavigateUp();
+    }
+
+    public void runObjectRecognition(Uri uri) {
+        FirebaseVisionImage image = null;
+        try {
+            image = FirebaseVisionImage.fromBitmap(MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Multiple object detection in static images
+        FirebaseVisionObjectDetectorOptions options =
+                new FirebaseVisionObjectDetectorOptions.Builder()
+                        .setDetectorMode(FirebaseVisionObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                        .enableMultipleObjects()
+                        .enableClassification()  // Optional
+                        .build();
+        FirebaseVisionObjectDetector objectDetector =
+                FirebaseVision.getInstance().getOnDeviceObjectDetector(options);
+        FirebaseVisionImageLabeler labeler = FirebaseVision.getInstance()
+                .getCloudImageLabeler();
+        objectDetector.processImage(image)
+                .addOnSuccessListener(detectedObjects -> {
+                    for (FirebaseVisionObject visionObject : detectedObjects) {
+                        visionObject.getBoundingBox();
+//                                    Log.i("Detected Objects",visionObject.getClassificationCategory());
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                // Task failed with an exception
+                // ...
+            }
+        });
+        labeler.processImage(image)
+                .addOnSuccessListener(labels -> {
+                    String description = "";
+                    for (FirebaseVisionImageLabel label : labels) {
+                        Log.i("Detected Objects", label.getText());
+                        description += label.getText() + " ";
+                    }
+                    uploadPostToStorage(mPhotoUri, description);
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+
+                    }
+                });
     }
 }

@@ -16,6 +16,10 @@
     <string name="menu_send">Send</string>
     <string name="profile_branches">Branches</string>
     <string name="profile_roots">Roots</string>
+    <string name="toolbar_search_label">Search Posts</string>
+    <string name="follow_label">Follow</string>
+    <string name="not_found_label">Matching Posts Not Found</string>
+    <string name="like_button_label">Like</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

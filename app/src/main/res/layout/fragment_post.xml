@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/view_border"
     tools:context=".PostFragment">
 
     <TextView
@@ -13,8 +13,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="TextView"
-        app:layout_constraintBottom_toTopOf="@+id/linearLayout"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/picture_post" />
 
     <ImageView
         android:id="@+id/post_profile_pic"
@@ -37,15 +37,15 @@
 
         <TextView
             android:id="@+id/post_username"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="TextView" />
-
-        <TextView
-            android:id="@+id/post_node_place"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TextView" />
+
+        <!--        <TextView-->
+        <!--            android:id="@+id/post_node_place"-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:text="TextView" />-->
 
     </LinearLayout>
 
@@ -56,6 +56,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="16dp"
+        android:rotation="90"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/post_profile_pic"
@@ -71,42 +72,63 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/picture_post">
 
-        <ImageButton
-            android:id="@+id/fav"
+        <Button
+            android:id="@+id/post_like_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            tools:src="@android:drawable/btn_star_big_on" />
+            android:text="@string/like_button_label"/>
 
-        <ImageButton
-            android:id="@+id/imageButton2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@drawable/ic_menu_send" />
+        <!--        <ImageButton-->
+        <!--            android:id="@+id/imageButton2"-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:layout_weight="1"-->
+        <!--            android:src="@drawable/ic_menu_send" />-->
     </LinearLayout>
 
-    <LinearLayout
+    <!--    <LinearLayout-->
+    <!--        android:id="@+id/linearLayout3"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:layout_marginTop="24dp"-->
+    <!--        android:layout_marginEnd="16dp"-->
+    <!--        android:orientation="horizontal"-->
+    <!--        app:layout_constraintEnd_toEndOf="parent"-->
+    <!--        app:layout_constraintTop_toBottomOf="@+id/picture_post">-->
+
+    <!--        <ImageButton-->
+    <!--            android:id="@+id/imageButton4"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:layout_weight="1"-->
+    <!--            android:src="@android:drawable/ic_menu_recent_history" />-->
+
+    <!--        <ImageButton-->
+    <!--            android:id="@+id/imageButton3"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:layout_weight="1"-->
+    <!--            android:src="@android:drawable/ic_input_add" />-->
+    <!--    </LinearLayout>-->
+
+    <TextView
+        android:id="@+id/post_like_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
         android:layout_marginEnd="16dp"
-        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/picture_post">
+        app:layout_constraintTop_toBottomOf="@+id/picture_post" />
 
-        <ImageButton
-            android:id="@+id/imageButton4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@android:drawable/ic_menu_recent_history" />
-
-        <ImageButton
-            android:id="@+id/imageButton3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@android:drawable/ic_input_add" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/post_description_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
