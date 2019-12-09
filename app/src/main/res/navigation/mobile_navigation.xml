@@ -2,7 +2,6 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/mobile_navigation"
     app:startDestination="@+id/nav_home">
 
     <fragment
@@ -17,27 +16,27 @@
         android:label="@string/menu_profile"
         tools:layout="@layout/fragment_profile" />
 
-    <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="com.bretthirschberger.pictree.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
+<!--    <fragment-->
+<!--        android:id="@+id/nav_slideshow"-->
+<!--        android:name="com.bretthirschberger.pictree.ui.slideshow.SlideshowFragment"-->
+<!--        android:label="@string/menu_slideshow"-->
+<!--        tools:layout="@layout/fragment_slideshow" />-->
+
+<!--    <fragment-->
+<!--        android:id="@+id/nav_tools"-->
+<!--        android:name="com.bretthirschberger.pictree.ui.tools.ToolsFragment"-->
+<!--        android:label="@string/menu_tools"-->
+<!--        tools:layout="@layout/fragment_tools" />-->
+
+<!--    <fragment-->
+<!--        android:id="@+id/nav_share"-->
+<!--        android:name="com.bretthirschberger.pictree.ui.share.ShareFragment"-->
+<!--        android:label="@string/menu_share"-->
+<!--        tools:layout="@layout/fragment_share" />-->
 
     <fragment
-        android:id="@+id/nav_tools"
-        android:name="com.bretthirschberger.pictree.ui.tools.ToolsFragment"
-        android:label="@string/menu_tools"
-        tools:layout="@layout/fragment_tools" />
-
-    <fragment
-        android:id="@+id/nav_share"
-        android:name="com.bretthirschberger.pictree.ui.share.ShareFragment"
-        android:label="@string/menu_share"
-        tools:layout="@layout/fragment_share" />
-
-    <fragment
-        android:id="@+id/nav_send"
-        android:name="com.bretthirschberger.pictree.ui.send.SendFragment"
-        android:label="@string/menu_send"
-        tools:layout="@layout/fragment_send" />
+        android:id="@+id/nav_posts"
+        android:name="com.bretthirschberger.pictree.ui.posts.PostsFragment"
+        android:label="@string/menu_posts"
+        tools:layout="@layout/fragment_local_posts" />
 </navigation>

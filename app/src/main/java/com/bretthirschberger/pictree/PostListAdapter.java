@@ -7,9 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
-import android.provider.MediaStore;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,15 +52,15 @@ public class PostListAdapter extends RecyclerView.Adapter<PostListAdapter.Exampl
         private Button mFavoriteButton;
         private View mItemView;
 
-        public ExamplePost(@NonNull View itemView) {
+        ExamplePost(@NonNull View itemView) {
             super(itemView);
             mProfilePicture = itemView.findViewById(R.id.post_profile_pic);
-            mPostPicture = itemView.findViewById(R.id.picture_post);
-            mUsername = itemView.findViewById(R.id.post_username);
-            mTime = itemView.findViewById(R.id.post_time);
+            mPostPicture = itemView.findViewById(R.id.local_picture_post);
+            mUsername = itemView.findViewById(R.id.local_post_username);
+            mTime = itemView.findViewById(R.id.local_post_time);
             mFavoriteButton = itemView.findViewById(R.id.post_like_button);
             mLikesText = itemView.findViewById(R.id.post_like_view);
-            mDescriptionView = itemView.findViewById(R.id.post_description_view);
+            mDescriptionView = itemView.findViewById(R.id.local_post_description_view);
             mItemView = itemView;
         }
     }
@@ -155,7 +153,6 @@ public class PostListAdapter extends RecyclerView.Adapter<PostListAdapter.Exampl
         holder.mUsername.setText(currentItem.getUser().getUsername());
         holder.mTime.setText(currentItem.getPostTime());
 
-
         FirebaseVisionImageLabeler labeler = FirebaseVision.getInstance()
                 .getCloudImageLabeler();
         labeler.processImage(image)
@@ -165,7 +162,7 @@ public class PostListAdapter extends RecyclerView.Adapter<PostListAdapter.Exampl
                         description += visionObject.getText() + " ";
                     }
                     holder.mDescriptionView.setText(description);
-                }).addOnFailureListener(e -> holder.mDescriptionView.setText("Description not found."));
+                }).addOnFailureListener(e -> holder.mDescriptionView.setText(holder.mItemView.getResources().getText(R.string.description_error)));
 
 
         holder.mFavoriteButton.setOnClickListener(v -> postsReference.child(currentItem.getPostId()).addListenerForSingleValueEvent(new ValueEventListener() {

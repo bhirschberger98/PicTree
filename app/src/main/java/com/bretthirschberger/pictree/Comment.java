@@ -3,7 +3,7 @@ package com.bretthirschberger.pictree;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public final class Comment implements Serializable {
+final public class Comment implements Serializable {
     private String mUsername;
     private String mComment;
     private LocalDateTime mTimePosted;

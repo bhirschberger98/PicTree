@@ -1,21 +1,14 @@
 package com.bretthirschberger.pictree;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraManager;
-import android.media.Image;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 import com.bretthirschberger.pictree.ui.home.HomeFragment;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -24,7 +17,6 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.core.content.FileProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -40,7 +32,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
-import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
 import com.google.firebase.ml.vision.objects.FirebaseVisionObject;
@@ -48,8 +39,6 @@ import com.google.firebase.ml.vision.objects.FirebaseVisionObjectDetector;
 import com.google.firebase.ml.vision.objects.FirebaseVisionObjectDetectorOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.StorageTask;
-import com.google.firebase.storage.UploadTask;
 
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -57,17 +46,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.util.SparseIntArray;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.Surface;
-import android.widget.EditText;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
-import java.util.List;
 
 public class MainFeedActivity extends AppCompatActivity {
 
@@ -82,8 +71,8 @@ public class MainFeedActivity extends AppCompatActivity {
     private FirebaseDatabase mDatabase;
     private DatabaseReference mPostsReference;
     private DatabaseReference mUserReference;
-    private EditText mSearchField;
     private Uri mPhotoUri;
+    private PictureDatabaseHandler mPictureDatabaseHandler;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
     static {
@@ -101,17 +90,17 @@ public class MainFeedActivity extends AppCompatActivity {
         mDatabase = FirebaseDatabase.getInstance();
         mPostsReference = mDatabase.getReference(POSTS_REFERENCE);
         mUserReference = mDatabase.getReference(USER_REFERENCE);
+        mPictureDatabaseHandler = new PictureDatabaseHandler(this, null);
         setSupportActionBar(toolbar);
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(view -> dispatchTakePictureIntent());
         mStorageRef = FirebaseStorage.getInstance().getReference();
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
-        mSearchField = findViewById(R.id.toolbar_search);
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_gallery)
+                R.id.nav_home, R.id.nav_gallery, R.id.nav_posts)
                 .setDrawerLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -125,7 +114,13 @@ public class MainFeedActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 //            uploadPostToStorage(mPhotoUri);
-            runObjectRecognition(mPhotoUri);
+            getDescription(mPhotoUri);
+            findObjectsInImage(mPhotoUri);
+//            try {
+//                mPictureDatabaseHandler.addPost(MediaStore.Images.Media.getBitmap(this.getContentResolver(), mPhotoUri));
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
         }
     }
 
@@ -139,7 +134,7 @@ public class MainFeedActivity extends AppCompatActivity {
                 photoFile = createImageFile();
             } catch (IOException ex) {
                 // Error occurred while creating the File
-                Toast.makeText(getApplicationContext(), "IO Exception", Toast.LENGTH_SHORT);
+                Toast.makeText(getApplicationContext(), "IO Exception", Toast.LENGTH_SHORT).show();
                 ex.printStackTrace();
             }
             // Continue only if the File was successfully created
@@ -203,13 +198,7 @@ public class MainFeedActivity extends AppCompatActivity {
                     downloadUrl.addOnSuccessListener(uri -> uploadPost(downloadUrl.getResult(), description));
 
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception exception) {
-                        // Handle unsuccessful uploads
-                        // ...
-                    }
-                });
+                .addOnFailureListener(exception -> exception.printStackTrace());
     }
 
     @Override
@@ -226,14 +215,7 @@ public class MainFeedActivity extends AppCompatActivity {
                 || super.onSupportNavigateUp();
     }
 
-    public void runObjectRecognition(Uri uri) {
-        FirebaseVisionImage image = null;
-        try {
-            image = FirebaseVisionImage.fromBitmap(MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // Multiple object detection in static images
+    private void findObjectsInImage(Uri uri) {
         FirebaseVisionObjectDetectorOptions options =
                 new FirebaseVisionObjectDetectorOptions.Builder()
                         .setDetectorMode(FirebaseVisionObjectDetectorOptions.SINGLE_IMAGE_MODE)
@@ -242,35 +224,102 @@ public class MainFeedActivity extends AppCompatActivity {
                         .build();
         FirebaseVisionObjectDetector objectDetector =
                 FirebaseVision.getInstance().getOnDeviceObjectDetector(options);
-        FirebaseVisionImageLabeler labeler = FirebaseVision.getInstance()
-                .getCloudImageLabeler();
+        Bitmap bitmap = null;
+        try {
+            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(bitmap);
+        Bitmap bitmapCopy = bitmap.copy(bitmap.getConfig(), true);
+        Bitmap finalBitmap = bitmap;
         objectDetector.processImage(image)
                 .addOnSuccessListener(detectedObjects -> {
+                    Canvas canvas = new Canvas(bitmapCopy);
+                    Paint rectPaint = new Paint();
+                    Paint textPaint = new Paint();
+                    textPaint.setTextSize(100);
+                    textPaint.setColor(Color.RED);
+//                    textPaint.
+                    rectPaint.setStyle(Paint.Style.STROKE);
+                    rectPaint.setStrokeWidth(20);
+                    rectPaint.setColor(Color.RED);
                     for (FirebaseVisionObject visionObject : detectedObjects) {
-                        visionObject.getBoundingBox();
-//                                    Log.i("Detected Objects",visionObject.getClassificationCategory());
+                        canvas.drawRect(visionObject.getBoundingBox(), rectPaint);
+                        String category;
+                        switch (visionObject.getClassificationCategory()) {
+                            case FirebaseVisionObject.CATEGORY_FASHION_GOOD:
+                                category = "Fashion Good";
+                                break;
+                            case FirebaseVisionObject.CATEGORY_FOOD:
+                                category = "Food";
+                                break;
+                            case FirebaseVisionObject.CATEGORY_HOME_GOOD:
+                                category = "Home Good";
+                                break;
+                            case FirebaseVisionObject.CATEGORY_PLACE:
+                                category = "Place";
+                                break;
+                            case FirebaseVisionObject.CATEGORY_PLANT:
+                                category = "Plant";
+                                break;
+                            default:
+                                category = "Unknown";
+
+                        }
+                        canvas.drawText("Category: " + category +
+                                        ", Confidence: " + visionObject.getClassificationConfidence(),
+                                visionObject.getBoundingBox().left,
+                                visionObject.getBoundingBox().top,
+                                textPaint);
                     }
-                }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                // Task failed with an exception
-                // ...
-            }
-        });
+                    Log.i("Objects Found", detectedObjects.size() + "");
+                    String file_path = getFilesDir().getAbsolutePath() +
+                            "/PicTree";
+                    File dir = new File(file_path);
+                    if (!dir.exists())
+                        dir.mkdirs();
+                    File file = new File(dir, "pictree" + LocalDateTime.now().toString().replace('.', '-') + ".png");
+                    FileOutputStream fOut = null;
+                    try {
+                        fOut = new FileOutputStream(file);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                    bitmapCopy.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+                    try {
+                        fOut.flush();
+                        fOut.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    mPictureDatabaseHandler.addPost(finalBitmap, Uri.fromFile(file).toString());
+                }).addOnFailureListener(e -> e.printStackTrace());
+
+
+    }
+
+    private void getDescription(Uri uri) {
+        FirebaseVisionImage image = null;
+        final String[] description = {""};
+        try {
+            image = FirebaseVisionImage.fromBitmap(MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Multiple object detection in static images
+        FirebaseVisionImageLabeler labeler = FirebaseVision.getInstance()
+                .getCloudImageLabeler();
         labeler.processImage(image)
                 .addOnSuccessListener(labels -> {
-                    String description = "";
+//                    String description = "";
                     for (FirebaseVisionImageLabel label : labels) {
                         Log.i("Detected Objects", label.getText());
-                        description += label.getText() + " ";
+                        description[0] += label.getText() + " ";
                     }
-                    uploadPostToStorage(mPhotoUri, description);
+                    uploadPostToStorage(mPhotoUri, description[0]);
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-
-                    }
-                });
+                .addOnFailureListener(e -> e.printStackTrace());
     }
 }

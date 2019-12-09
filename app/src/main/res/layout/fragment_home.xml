@@ -16,7 +16,8 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:hint="@string/toolbar_search_label"
-            android:inputType="textPersonName" />
+            android:inputType="textPersonName"
+            android:importantForAutofill="no" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/post_list"

@@ -8,13 +8,12 @@
     tools:context=".PostFragment">
 
     <TextView
-        android:id="@+id/post_time"
+        android:id="@+id/local_post_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:text="TextView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/picture_post" />
+        app:layout_constraintTop_toBottomOf="@+id/local_picture_post" />
 
     <ImageView
         android:id="@+id/post_profile_pic"
@@ -36,21 +35,14 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/post_username"
+            android:id="@+id/local_post_username"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="TextView" />
-
-        <!--        <TextView-->
-        <!--            android:id="@+id/post_node_place"-->
-        <!--            android:layout_width="wrap_content"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:text="TextView" />-->
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 
     <ImageView
-        android:id="@+id/picture_post"
+        android:id="@+id/local_picture_post"
         android:layout_width="370dp"
         android:layout_height="370dp"
         android:layout_marginStart="16dp"
@@ -70,7 +62,7 @@
         android:layout_marginTop="24dp"
         android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/picture_post">
+        app:layout_constraintTop_toBottomOf="@+id/local_picture_post">
 
         <Button
             android:id="@+id/post_like_button"
@@ -78,38 +70,8 @@
             android:layout_height="wrap_content"
             android:text="@string/like_button_label"/>
 
-        <!--        <ImageButton-->
-        <!--            android:id="@+id/imageButton2"-->
-        <!--            android:layout_width="wrap_content"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:layout_weight="1"-->
-        <!--            android:src="@drawable/ic_menu_send" />-->
     </LinearLayout>
 
-    <!--    <LinearLayout-->
-    <!--        android:id="@+id/linearLayout3"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:layout_marginTop="24dp"-->
-    <!--        android:layout_marginEnd="16dp"-->
-    <!--        android:orientation="horizontal"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintTop_toBottomOf="@+id/picture_post">-->
-
-    <!--        <ImageButton-->
-    <!--            android:id="@+id/imageButton4"-->
-    <!--            android:layout_width="wrap_content"-->
-    <!--            android:layout_height="wrap_content"-->
-    <!--            android:layout_weight="1"-->
-    <!--            android:src="@android:drawable/ic_menu_recent_history" />-->
-
-    <!--        <ImageButton-->
-    <!--            android:id="@+id/imageButton3"-->
-    <!--            android:layout_width="wrap_content"-->
-    <!--            android:layout_height="wrap_content"-->
-    <!--            android:layout_weight="1"-->
-    <!--            android:src="@android:drawable/ic_input_add" />-->
-    <!--    </LinearLayout>-->
 
     <TextView
         android:id="@+id/post_like_view"
@@ -117,10 +79,10 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/picture_post" />
+        app:layout_constraintTop_toBottomOf="@+id/local_picture_post" />
 
     <TextView
-        android:id="@+id/post_description_view"
+        android:id="@+id/local_post_description_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"

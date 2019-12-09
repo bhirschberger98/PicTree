@@ -35,7 +35,7 @@ public class HomeFragment extends Fragment {
     private RecyclerView mPostsList;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private static String POSTS_REFERENCE = "posts";
+    private static final String POSTS_REFERENCE = "posts";
     private EditText mSearchField;
 
 
@@ -85,8 +85,6 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         posts.clear();
-//                        if (mSearchField.getText().toString().equals(""))
-//                            return;
                         for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                             if (snapshot.getValue(Post.class).getDescription().toUpperCase().contains(mSearchField.getText().toString().toUpperCase())) {
                                 Post post = snapshot.getValue(Post.class);

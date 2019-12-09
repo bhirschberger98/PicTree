@@ -60,6 +60,10 @@ final public class User implements Serializable {
         return mEmail;
     }
 
+    public void setEmail(String email) {
+        mEmail = email;
+    }
+
     public static User getCurrentUser() {
         return sCurrentUser;
     }
@@ -68,9 +72,6 @@ final public class User implements Serializable {
         sCurrentUser = currentUser;
     }
 
-    public void setEmail(String email) {
-        mEmail = email;
-    }
 
     public void setProfilePicture(String profilePictureUri) {
         mProfilePictureUri = profilePictureUri;
@@ -120,9 +121,7 @@ final public class User implements Serializable {
     public boolean equals(@Nullable Object obj) {
         if(obj instanceof User){
             User user= (User)obj;
-            if (user.getUsername().equals(this.mUsername)&&user.getEmail().equals(this.mEmail)){
-                return true;
-            }
+            return user.getUsername().equals(this.mUsername) && user.getEmail().equals(this.mEmail);
         }
         return false;
     }

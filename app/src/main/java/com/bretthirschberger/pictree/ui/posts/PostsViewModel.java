@@ -1,14 +1,14 @@
-package com.bretthirschberger.pictree.ui.send;
+package com.bretthirschberger.pictree.ui.posts;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class SendViewModel extends ViewModel {
+public class PostsViewModel extends ViewModel {
 
     private MutableLiveData<String> mText;
 
-    public SendViewModel() {
+    public PostsViewModel() {
         mText = new MutableLiveData<>();
         mText.setValue("This is send fragment");
     }

@@ -1,7 +1,5 @@
 package com.bretthirschberger.pictree;
 
-import android.net.Uri;
-
 final public class Branch extends Post {
 
     private Post mPreviousPost;
